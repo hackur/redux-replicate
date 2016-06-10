@@ -35,23 +35,48 @@ export default function replicate({
     let nextState = null;
     const replicators = replicator.map(Object.create);
 
-    function getInitialState() {
-      let initialState = reducerKeys ? {} : null;
+    function getInitialState(gettingKey) {
+      for (let replicator of replicators) {
+        if (replicator.onReady) {
+          store.onReady(replicator.onReady);
+        }
+      }
+
+      if (store.initializingReplication) {
+        store.initializingReplication++;
+      } else {
+        store.initializingReplication = 1;
+      }
+
+      store.initializedReplication = false;
+      store.onReady(() => {
+        store.initializedReplication = true;
+      });
+
+      let actualInitialState = reducerKeys ? {} : null;
       let setInitialState = false;
       let semaphore = replicators.length;
 
       function clear() {
         if (--semaphore === 0) {
           if (setInitialState) {
-            store.setState(initialState);
+            store.setState(actualInitialState);
           }
 
           if (--store.initializingReplication === 0) {
             while (store.readyCallbacks.length) {
-              store.readyCallbacks.shift()(key, store);
+              store.readyCallbacks.shift()(store.key, store);
             }
           }
         }
+      }
+
+      if (!key) {
+        actualInitialState = initialState;
+        setInitialState = true;
+        semaphore = 1;
+        clear();
+        return;
       }
 
       if (reducerKeys) {
@@ -96,8 +121,8 @@ export default function replicate({
             if (replicator.getInitialState) {
               for (let reducerKey of initialReducerKeys) {
                 replicator.getInitialState({ key, reducerKey }, state => {
-                  if (typeof state !== 'undefined') {
-                    initialState[reducerKey] = state;
+                  if (gettingKey === key && typeof state !== 'undefined') {
+                    actualInitialState[reducerKey] = state;
                     setInitialState = true;
                   }
 
@@ -118,8 +143,8 @@ export default function replicate({
         for (let replicator of replicators) {
           if (replicator.getInitialState) {
             replicator.getInitialState({ key }, state => {
-              if (typeof state !== 'undefined') {
-                initialState = state;
+              if (gettingKey === key && typeof state !== 'undefined') {
+                actualInitialState = state;
                 setInitialState = true;
               }
 
@@ -132,16 +157,11 @@ export default function replicate({
       }
     }
 
-    function mergeNextState(state, mocked = store.initializedReplication) {
+    function mergeNextState(state) {
       if (reducerKeys) {
         state = { ...state, ...nextState };
       } else {
         state = nextState;
-      }
-
-      if (!mocked) {
-        nextState = next(reducer, state, enhancer).getState();
-        return mergeNextState(state, true);
       }
 
       nextState = null;
@@ -153,7 +173,7 @@ export default function replicate({
         ? reducer(mergeNextState(state), action)
         : reducer(state, action);
 
-      if (store && store.initializedReplication) {
+      if (key && store && store.initializedReplication) {
         for (let replicator of replicators) {
           if (replicator.onStateChange) {
             if (reducerKeys) {
@@ -195,22 +215,18 @@ export default function replicate({
       };
     }
 
-    for (let replicator of replicators) {
-      if (replicator.onReady) {
-        store.onReady(replicator.onReady);
-      }
-    }
+    if (!store.setKey) {
+      store.setKey = (newKey, readyCallback) => {
+        key = newKey;
+        store.key = key;
 
-    if (store.initializingReplication) {
-      store.initializingReplication++;
-    } else {
-      store.initializingReplication = 1;
-    }
+        if (readyCallback) {
+          store.onReady(readyCallback);
+        }
 
-    store.initializedReplication = false;
-    store.onReady(() => {
-      store.initializedReplication = true;
-    });
+        store.initialStateGetters.forEach(fn => fn(key));
+      };
+    }
 
     if (!store.setState) {
       store.setState = state => {
@@ -219,7 +235,16 @@ export default function replicate({
       };
     }
 
-    getInitialState();
+    if (typeof key !== 'undefined') {
+      store.key = key;
+    }
+
+    if (!store.initialStateGetters) {
+      store.initialStateGetters = [];
+    }
+    store.initialStateGetters.push(getInitialState);
+
+    getInitialState(key);
 
     return store;
   };
