@@ -232,7 +232,7 @@ function handleQuery(query, setResult) {
 
 The enhancer adds the following to the `store` object.
 
-### key
+### store.key
 
 The current `key`.
 
