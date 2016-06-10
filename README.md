@@ -232,6 +232,14 @@ function handleQuery(query, setResult) {
 
 The enhancer adds the following to the `store` object.
 
+### key
+
+The current `key`.
+
+### store.setKey(String key, Function readyCallback)
+
+Sets the current `key`.  The `readyCallback` is called after all of the replicators have fully initialized based on the new `key`.
+
 ### store.setState(Mixed nextState)
 
 You typically shouldn't need to use this, as state changes should almost always occur as a result of `store.dispatch(action)`.  But it may be useful for keeping a store's state synchronized with some data source which doesn't rely on actions.  If using `reducerKeys`, the `nextState` is expected to be an object and is merged into the current state, similar to React's `setState`.  If not using `reducerKeys`, the `nextState` replaces the current state entirely.
@@ -247,7 +255,7 @@ If for some reason you need to know whether or not `getInitialState` has complet
 
 ## Example replicator
 
-See [`redux-replicate-localforage`](https://github.com/loggur/redux-replicate-localforage), a replicator that persists the state of your store(s) locally.
+See [`redux-replicate-fs`](https://github.com/loggur/redux-replicate-fs), a replicator that persists the state of your store(s) and handles queries using Node's file system API.
 
 
 ## Example using [`react-redux-provide`](https://github.com/loggur/react-redux-provide)
