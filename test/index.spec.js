@@ -137,16 +137,6 @@ describe('redux-replicate', () => {
     store.onReady(readyCallback);
   });
 
-  it('should add setState method to store, which merges next state if reducer keys are specified', () => {
-    store.setState({ wow: 'wow', very: 'very' });
-
-    const state = store.getState();
-    expect(typeof state).toBe('object');
-    expect(state.wow).toBe(customInitialState.wow);
-    expect(state.very).toBe('very');
-    expect(state.awesome).toBe(initialState.awesome);
-  });
-
   it('should not call postReduction/onStateChange until replicator has initialized', () => {
     const wow = 'such replication (not yet replicated)';
     const very = 'easy right? (not yet replicated)';
@@ -162,10 +152,17 @@ describe('redux-replicate', () => {
     expect(onStateChangeCalls).toBe(0);
     expect(postReductionCalls).toBe(0);
 
+    store.setState({ wow: 'wow', very: 'very' });
+    state = store.getState();
+    expect(typeof state).toBe('object');
+    expect(state.wow).toBe('wow');
+    expect(state.very).toBe('very');
+    expect(state.awesome).toBe(initialState.awesome);
+
     store.setState(initialState);
     state = store.getState();
     expect(typeof state).toBe('object');
-    expect(state.wow).toBe(customInitialState.wow);
+    expect(state.wow).toBe(initialState.wow);
     expect(state.very).toBe(initialState.very);
     expect(state.awesome).toBe(initialState.awesome);
     expect(onStateChangeCalls).toBe(0);
@@ -177,17 +174,12 @@ describe('redux-replicate', () => {
     expect(readyCallbackCalls).toBe(0);
   });
 
-  it('should mock store initialization until replication initialized', () => {
-    // happens whenever store is initialized or setState is called, so 3 so far
-    expect(customInitializationCalls).toBe(3);
-  });
-
   it('should have reinitialized via async data source after 500ms', done => {
     setTimeout(() => {
       const state = store.getState();
 
       expect(typeof state).toBe('object');
-      expect(state.wow).toBe(customInitialState.wow);
+      expect(state.wow).toBe(databaseState['test/wow']);
       expect(state.very).toBe(databaseState['test/very']);
       expect(onStateChangeCalls).toBe(0);
       expect(postReductionCalls).toBe(0);
@@ -288,9 +280,9 @@ describe('redux-replicate', () => {
     }, 520);
   });
 
-  it('should have only run custom enhancer one more time', done => {
+  it('should have run custom enhancer only once', done => {
     setTimeout(() => {
-      expect(customInitializationCalls).toBe(4);
+      expect(customInitializationCalls).toBe(1);
 
       done();
     }, 520);
