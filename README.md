@@ -236,15 +236,15 @@ The enhancer adds the following to the `store` object.
 
 The current `key`.
 
-### store.setKey(String key, Function readyCallback)
+### store.setKey (String key, Function readyCallback)
 
 Sets the current `key`.  The `readyCallback` is called after all of the replicators have fully initialized based on the new `key`.
 
-### store.setState(Mixed nextState)
+### store.setState (Mixed nextState)
 
 You typically shouldn't need to use this, as state changes should almost always occur as a result of `store.dispatch(action)`.  But it may be useful for keeping a store's state synchronized with some data source which doesn't rely on actions.  If using `reducerKeys`, the `nextState` is expected to be an object and is merged into the current state, similar to React's `setState`.  If not using `reducerKeys`, the `nextState` replaces the current state entirely.
 
-### store.onReady(Function readyCallback)
+### store.onReady (Function readyCallback)
 
 You can use this if you know your replicator(s) asynchronously initialize the store's state and would like to do something immediately after initialization.  The `readyCallback` will receive the `key` and `store` as arguments.
 
