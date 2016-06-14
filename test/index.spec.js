@@ -89,7 +89,7 @@ describe('redux-replicate', () => {
 
       setTimeout(() => {
         setState(databaseState[itemKey]);
-      }, 500);
+      }, 1000);
     },
 
     onStateChange({ key, reducerKey }, state, nextState, action, store) {
@@ -174,7 +174,7 @@ describe('redux-replicate', () => {
     expect(readyCallbackCalls).toBe(0);
   });
 
-  it('should have reinitialized via async data source after 500ms', done => {
+  it('should have reinitialized via async data source after 1 sec', done => {
     setTimeout(() => {
       const state = store.getState();
 
@@ -185,7 +185,7 @@ describe('redux-replicate', () => {
       expect(postReductionCalls).toBe(0);
 
       done();
-    }, 520);
+    }, 1000);
   });
 
   it('should have reinitialized only the specified reducer keys', done => {
@@ -195,7 +195,7 @@ describe('redux-replicate', () => {
       expect(state.awesome).toBe(initialState.awesome);
 
       done();
-    }, 520);
+    });
   });
 
   it('should be ready now', done => {
@@ -204,7 +204,7 @@ describe('redux-replicate', () => {
       expect(readyCallbackCalls).toBe(1);
 
       done();
-    }, 520);
+    });
   });
 
   it('should call postReduction upon every action', done => {
@@ -224,7 +224,7 @@ describe('redux-replicate', () => {
       expect(postReductionCalls).toBe(2);
 
       done();
-    }, 520);
+    });
   });
 
   it('should call onStateChange only when state has changed', done => {
@@ -243,7 +243,7 @@ describe('redux-replicate', () => {
       expect(databaseState['test/very']).toBe(very);
 
       done();
-    }, 520);
+    });
   });
 
   it('should not call onStateChange for unspecified reducer keys', done => {
@@ -254,7 +254,7 @@ describe('redux-replicate', () => {
       expect(onStateChangeCalls).toBe(3);   // still 3
 
       done();
-    }, 520);
+    });
   });
 
   it('should call postReduction once per reduction but onStateChange once per changed reducer key', done => {
@@ -277,7 +277,7 @@ describe('redux-replicate', () => {
       expect(onStateChangeCalls).toBe(4);
 
       done();
-    }, 520);
+    });
   });
 
   it('should have run custom enhancer only once', done => {
@@ -285,6 +285,6 @@ describe('redux-replicate', () => {
       expect(customInitializationCalls).toBe(1);
 
       done();
-    }, 520);
+    });
   });
 });

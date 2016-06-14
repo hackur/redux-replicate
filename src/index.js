@@ -10,6 +10,8 @@ function arrayToMap(array) {
   return map;
 }
 
+const INIT = '@@redux-replicate/INIT';
+
 /**
  * Creates a Redux store enhancer designed to replicate actions and states.
  *
@@ -33,6 +35,7 @@ export default function replicate({
   return next => (reducer, initialState, enhancer) => {
     let store = null;
     let nextState = null;
+    let settingState = false;
     const replicators = replicator.map(Object.create);
 
     function getInitialState(gettingKey) {
@@ -79,22 +82,29 @@ export default function replicate({
         return;
       }
 
+      const currentState = store.getState();
+      const action = { type: INIT };
+
       if (reducerKeys) {
-        let initialReducerKeys = reducerKeys;
+        let getReducerKeys = reducerKeys;
+        let setReducerKeys = null;
 
         if (reducerKeys === true) {
-          reducerKeys = Object.keys(store.getState());
-          initialReducerKeys = reducerKeys;
+          reducerKeys = Object.keys(currentState);
+          getReducerKeys = reducerKeys;
         }
 
         // here we want the client to get only the undefined initial states
         if (clientState) {
-          initialReducerKeys = [];
+          getReducerKeys = [];
+          setReducerKeys = [];
 
           if (Array.isArray(reducerKeys)) {
             for (let reducerKey of reducerKeys) {
               if (typeof clientState[reducerKey] === 'undefined') {
-                initialReducerKeys.push(reducerKey);
+                getReducerKeys.push(reducerKey);
+              } else {
+                setReducerKeys.push(reducerKey);
               }
             }
           } else {
@@ -105,7 +115,9 @@ export default function replicate({
                 reducerKeys[reducerKey]
                 && typeof clientState[reducerKey] === 'undefined'
               ) {
-                initialReducerKeys.push(reducerKey);
+                getReducerKeys.push(reducerKey);
+              } else {
+                setReducerKeys.push(reducerKey);
               }
             }
 
@@ -114,14 +126,44 @@ export default function replicate({
         }
 
         queryable = arrayToMap(queryable === true ? reducerKeys : queryable);
-        semaphore = semaphore * initialReducerKeys.length;
+        semaphore = semaphore * getReducerKeys.length;
+
+        if (setReducerKeys) {
+          for (let replicator of replicators) {
+            if (replicator.onStateChange) {
+              for (let reducerKey of setReducerKeys) {
+                replicator.onStateChange(
+                  { key, reducerKey, queryable: queryable[reducerKey] },
+                  undefined,
+                  currentState[reducerKey],
+                  action,
+                  store
+                );
+              }
+            }
+          }
+        }
 
         if (semaphore) {
           for (let replicator of replicators) {
             if (replicator.getInitialState) {
-              for (let reducerKey of initialReducerKeys) {
+              for (let reducerKey of getReducerKeys) {
                 replicator.getInitialState({ key, reducerKey }, state => {
-                  if (gettingKey === key && typeof state !== 'undefined') {
+                  if (typeof state === 'undefined') {
+                    if (replicator.onStateChange) {
+                      replicator.onStateChange(
+                        {
+                          key: gettingKey,
+                          reducerKey,
+                          queryable: queryable[reducerKey]
+                        },
+                        undefined,
+                        currentState[reducerKey],
+                        action,
+                        store
+                      );
+                    }
+                  } else if (gettingKey === key) {
                     actualInitialState[reducerKey] = state;
                     setInitialState = true;
                   }
@@ -130,7 +172,7 @@ export default function replicate({
                 });
               }
             } else {
-              for (let reducerKey of initialReducerKeys) {
+              for (let reducerKey of getReducerKeys) {
                 clear();
               }
             }
@@ -143,7 +185,17 @@ export default function replicate({
         for (let replicator of replicators) {
           if (replicator.getInitialState) {
             replicator.getInitialState({ key }, state => {
-              if (gettingKey === key && typeof state !== 'undefined') {
+              if (typeof state === 'undefined') {
+                if (replicator.onStateChange) {
+                  replicator.onStateChange(
+                    { key: gettingKey, queryable },
+                    undefined,
+                    currentState,
+                    action,
+                    store
+                  );
+                }
+              } else if (gettingKey === key) {
                 actualInitialState = state;
                 setInitialState = true;
               }
@@ -169,7 +221,7 @@ export default function replicate({
     }
 
     function replicatedReducer(state, action) {
-      const actualNextState = nextState
+      const actualNextState = settingState
         ? reducer(mergeNextState(state), action)
         : reducer(state, action);
 
@@ -231,7 +283,9 @@ export default function replicate({
     if (!store.setState) {
       store.setState = state => {
         nextState = state;
+        settingState = true;
         store.replaceReducer(replicatedReducer);
+        settingState = false;
       };
     }
 
