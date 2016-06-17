@@ -57,6 +57,10 @@ Call the `replicate` function (default export) with the following options (as ke
 
 Typically a string, but this can be anything.  It's passed to your replicators so they know where and/or how to replicate data.  If you're using `reducerKeys`, each `reducerKey` is included in an object with this `key` when calling a replicator's `getInitialState` and `onStateChange` methods.
 
+### create
+
+Set this to `true` to ensure initial states are replicated.
+
 ### reducerKeys
 
 Optional boolean value, array of strings, or object containing boolean values.  This is helpful (and recommended!) if you're using Redux's `combineReducers` function (or similar) and want to replicate changes to individual keys within the store's state object, rather than the entire state tree.
