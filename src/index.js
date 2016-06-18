@@ -21,9 +21,9 @@ const CREATE = '@@redux-replicate/CREATE';
  */
 export default function replicate({
   key,
-  create,
   reducerKeys,
   queryable = false,
+  create,
   replicator,
   clientState
 }) {

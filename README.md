@@ -11,8 +11,24 @@ Creates a [Redux](https://github.com/rackt/redux) store enhancer designed to rep
 1.  [Installation](#installation)
 2.  [Why?](#why)
 3.  [Usage](#usage)
-4.  [Replicators](#replicators)
+  - [key](#key)
+  - [reducerKeys](#reducerkeys)
+  - [queryable](#queryable)
+  - [create](#create)
+  - [replicators](#replicators)
+  - [clientState](#clientstate)
+4.  [Replicators](#replicators-1)
+  - [getInitialState](#getinitialstate-object--mixed-key-optional-string-reducerkey--function-setstate)
+  - [onReady](#onready-mixed-key-object-store)
+  - [onStateChange](#onstatechange-object--mixed-key-optional-string-reducerkey-optional-boolean-queryable--mixed-state-mixed-nextstate-object-action-object-store)
+  - [postReduction](#postreduction-mixed-key-mixed-state-mixed-nextstate-object-action-object-store)
+  - [handleQuery](#handlequery-mixed-query-function-setresult)
 5.  [Store modifications](#store-modifications)
+  - [key](#storekey)
+  - [setKey](#storesetkey-string-key-function-readycallback)
+  - [setState](#storesetstate-mixed-nextstate)
+  - [onReady](#storeonready-function-readycallback)
+  - [initializedReplication](#storeinitializedreplication)
 6.  [Example replicator](#example-replicator)
 7.  [Example using `react-redux-provide`](#example-using-react-redux-provide)
 8.  [Example using `compose`](#example-using-compose)
@@ -57,10 +73,6 @@ Call the `replicate` function (default export) with the following options (as ke
 
 Typically a string, but this can be anything.  It's passed to your replicators so they know where and/or how to replicate data.  If you're using `reducerKeys`, each `reducerKey` is included in an object with this `key` when calling a replicator's `getInitialState` and `onStateChange` methods.
 
-### create
-
-Set this to `true` to ensure initial states are replicated.
-
 ### reducerKeys
 
 Optional boolean value, array of strings, or object containing boolean values.  This is helpful (and recommended!) if you're using Redux's `combineReducers` function (or similar) and want to replicate changes to individual keys within the store's state object, rather than the entire state tree.
@@ -84,6 +96,10 @@ If `true` and using `reducerKeys`, then each `reducerKey` will be queryable by v
 An array specifies which `reducerKeys` are queryable by value (current state).
 
 If `false`, values (current states) will not be queryable.
+
+### create
+
+Set this to `true` to ensure initial states are replicated.
 
 ### replicator(s)
 
