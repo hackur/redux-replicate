@@ -10,7 +10,8 @@ function arrayToMap(array) {
   return map;
 }
 
-const CREATE = '@@redux-replicate/CREATE';
+export const INIT = '@@redux-replicate/INIT';
+export const CREATE = '@@redux-replicate/CREATE';
 
 /**
  * Creates a Redux store enhancer designed to replicate actions and states.
@@ -84,7 +85,7 @@ export default function replicate({
       }
 
       const currentState = store.getState();
-      const createAction = { type: CREATE };
+      const action = { type: create ? CREATE : INIT };
 
       if (reducerKeys) {
         let getReducerKeys = reducerKeys;
@@ -129,7 +130,7 @@ export default function replicate({
         queryable = arrayToMap(queryable === true ? reducerKeys : queryable);
         semaphore = semaphore * getReducerKeys.length;
 
-        if (create && setReducerKeys) {
+        if ((create || clientState) && setReducerKeys) {
           for (let replicator of replicators) {
             if (replicator.onStateChange) {
               for (let reducerKey of setReducerKeys) {
@@ -137,7 +138,7 @@ export default function replicate({
                   { key, reducerKey, queryable: queryable[reducerKey] },
                   undefined,
                   currentState[reducerKey],
-                  createAction,
+                  action,
                   store
                 );
               }
@@ -151,7 +152,7 @@ export default function replicate({
               for (let reducerKey of getReducerKeys) {
                 replicator.getInitialState({ key, reducerKey }, state => {
                   if (typeof state === 'undefined') {
-                    if (create && replicator.onStateChange) {
+                    if ((create || clientState) && replicator.onStateChange) {
                       replicator.onStateChange(
                         {
                           key: gettingKey,
@@ -160,7 +161,7 @@ export default function replicate({
                         },
                         undefined,
                         currentState[reducerKey],
-                        createAction,
+                        action,
                         store
                       );
                     }
@@ -187,12 +188,12 @@ export default function replicate({
           if (replicator.getInitialState) {
             replicator.getInitialState({ key }, state => {
               if (typeof state === 'undefined') {
-                if (create && replicator.onStateChange) {
+                if ((create || clientState) && replicator.onStateChange) {
                   replicator.onStateChange(
                     { key: gettingKey, queryable },
                     undefined,
                     currentState,
-                    createAction,
+                    action,
                     store
                   );
                 }
@@ -300,6 +301,7 @@ export default function replicate({
     store.initialStateGetters.push(getInitialState);
 
     getInitialState(key);
+    clientState = null;
 
     return store;
   };
