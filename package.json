@@ -1,6 +1,6 @@
 {
   "name": "redux-replicate",
-  "version": "2.0.0-rc.4",
+  "version": "2.0.0-rc.5",
   "description": "Creates a Redux store enhancer designed to replicate actions and states.  Declaratively connect application state to data sources and create efficient, scalable, and reliable software with minimal effort.",
   "main": "./lib/index.js",
   "scripts": {
