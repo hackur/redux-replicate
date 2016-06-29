@@ -171,7 +171,7 @@ export default function replicate({
                   }
 
                   clear();
-                });
+                }, store);
               }
             } else {
               for (let reducerKey of getReducerKeys) {
@@ -203,7 +203,7 @@ export default function replicate({
               }
 
               clear();
-            });
+            }, store);
           } else {
             clear();
           }

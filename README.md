@@ -127,7 +127,7 @@ Replicators can:
 
 A replicator is a plain object of the following shape.
 
-### getInitialState (Object { Mixed key, Optional String reducerKey }, Function setState)
+### getInitialState (Object { Mixed key, Optional String reducerKey }, Function setState, Object store)
 
 Optional function to set the store's initial state, synchronously or asynchronously.
 
@@ -222,7 +222,7 @@ function postReduction(key, state, nextState, action, store) {
 }
 ```
 
-### handleQuery (Mixed query, Function setResult)
+### handleQuery (Mixed query, Function setResult, Object store)
 
 Optional function to handle some query.  The `query` argument can be specific to your implementation, but it's best to follow convention.  In the future, we may solidify a standard for this.
 
