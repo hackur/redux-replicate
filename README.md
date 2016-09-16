@@ -179,7 +179,7 @@ function onReady(key, store) {
 }
 ```
 
-### onStateChange (Object { Mixed key, Optional String reducerKey, Optional Boolean queryable }, Mixed state, Mixed nextState, Object action, Object store)
+### onStateChange (Object { Mixed key, Optional String reducerKey, Optional Boolean create, Optional Boolean queryable }, Mixed state, Mixed nextState, Object action, Object store)
 
 Optional function to replicate the state and/or the action upon state changes.  This is called only after initialization.
 
@@ -190,7 +190,7 @@ If not using `reducerKeys`, this function is called only once.
 Example (from [`redux-replicate-localforage`](https://github.com/loggur/redux-replicate-localforage)):
 
 ```js
-function onStateChange({ key, reducerKey, queryable }, state, nextState, action, store) {
+function onStateChange({ key, reducerKey, create, queryable }, state, nextState, action, store) {
   const itemKey = getItemKey(key, reducerKey);
 
   localforage

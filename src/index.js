@@ -135,7 +135,12 @@ export default function replicate({
             if (replicator.onStateChange) {
               for (let reducerKey of setReducerKeys) {
                 replicator.onStateChange(
-                  { key, reducerKey, queryable: queryable[reducerKey] },
+                  {
+                    key,
+                    reducerKey,
+                    create,
+                    queryable: queryable[reducerKey]
+                  },
                   undefined,
                   currentState[reducerKey],
                   action,
@@ -157,6 +162,7 @@ export default function replicate({
                         {
                           key: gettingKey,
                           reducerKey,
+                          create,
                           queryable: queryable[reducerKey]
                         },
                         undefined,
@@ -190,7 +196,7 @@ export default function replicate({
               if (typeof state === 'undefined') {
                 if ((create || clientState) && replicator.onStateChange) {
                   replicator.onStateChange(
-                    { key: gettingKey, queryable },
+                    { key: gettingKey, create, queryable },
                     undefined,
                     currentState,
                     action,
