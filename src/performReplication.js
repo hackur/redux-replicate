@@ -25,18 +25,22 @@ const performReplication = (store, replication, state, nextState, action) => {
                 : replication.queryable
             };
 
-            store.dispatch({ type: REPLICATE_STATE, ...setProps });
+            setTimeout(() => {
+              // not liking this at all, but it should be ok given that
+              // 99.9999% of data sources are async anyway
+              store.dispatch({ type: REPLICATE_STATE, ...setProps });
+            });
 
             replicator.onStateChange({
               ...setProps,
               store,
               action,
-              setStatus: status => store.dispatch({
+              setStatus: status => setTimeout(() => store.dispatch({
                 type: REPLICATED_STATE, ...setProps, status
-              }),
-              setError: error => store.dispatch({
+              })),
+              setError: error => setTimeout(() => store.dispatch({
                 type: STATE_CHANGE_ERROR, ...setProps, error
-              })
+              }))
             });
           }
         }
@@ -47,18 +51,22 @@ const performReplication = (store, replication, state, nextState, action) => {
           queryable: replication.queryable
         };
 
-        store.dispatch({ type: REPLICATE_STATE, ...setProps });
+        setTimeout(() => {
+          // not liking this at all, but it should be ok given that
+          // 99.9999% of data sources are async anyway
+          store.dispatch({ type: REPLICATE_STATE, ...setProps });
+        });
 
         replicator.onStateChange({
           ...setProps,
           store,
           action,
-          setStatus: status => store.dispatch({
+          setStatus: status => setTimeout(() => store.dispatch({
             type: REPLICATED_STATE, ...setProps, status
-          }),
-          setError: error => store.dispatch({
+          })),
+          setError: error => setTimeout(() => store.dispatch({
             type: STATE_CHANGE_ERROR, ...setProps, error
-          })
+          }))
         });
       }
     }

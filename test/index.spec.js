@@ -265,8 +265,7 @@ describe('redux-replicate', () => {
         awesome: '!!!!!!!!!!!!!'
       });
 
-      // setWow, setVery, setWow, setVery, setAwesome, setState = 7
-      expect(postReductionCalls).toBe(7);
+      expect(postReductionCalls).toBe(10);
 
       // changed wow, 1
       // changed very, 2
