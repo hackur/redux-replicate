@@ -10,28 +10,34 @@ Creates a [Redux](https://github.com/rackt/redux) store enhancer designed to rep
 
 1.  [Installation](#installation)
 2.  [Why?](#why)
-3.  [Usage](#usage)
+3.  [Exports](#exports)
+  - [Default export](#default-export)
+  - [Utilities](#utilities)
+  - [Action types](#action-types)
+4.  [Usage](#usage)
   - [key](#key)
   - [reducerKeys](#reducerkeys)
   - [queryable](#queryable)
   - [create](#create)
-  - [replicator](#replicator)
   - [clientState](#clientstate)
-4.  [Replicators](#replicators)
-  - [getInitialState](#getinitialstate-object--mixed-key-optional-string-reducerkey--function-setstate)
-  - [onReady](#onready-object-store)
-  - [onStateChange](#onstatechange-object-store-mixed-state-mixed-nextstate-object-action)
-  - [postReduction](#postreduction-object-store-mixed-state-mixed-nextstate-object-action)
-  - [handleQuery](#handlequery-mixed-query-function-setresult)
-5.  [Store modifications](#store-modifications)
+  - [replicator](#replicator)
+5.  [Replicators](#replicators)
+  - [getInitialState](#getinitialstate)
+  - [onReady](#onready)
+  - [onStateChange](#onstatechange)
+  - [postReduction](#postreduction)
+  - [handleQuery](#handlequery)
+6.  [Store modifications](#store-modifications)
   - [key](#storekey)
-  - [setKey](#storesetkey-string-key-function-readycallback)
-  - [setState](#storesetstate-mixed-nextstate)
-  - [onReady](#storeonready-function-readycallback)
+  - [setKey](#storesetkey)
+  - [setState](#storesetstate)
+  - [replication](#storereplication)
+  - [onReady](#storeonready)
+  - [readyCallbacks](#storereadycallbacks)
   - [initializedReplication](#storeinitializedreplication)
-6.  [Example replicator](#example-replicator)
-7.  [Example using `react-redux-provide`](#example-using-react-redux-provide)
-8.  [Example using `compose`](#example-using-compose)
+7.  [Example replicator](#example-replicator)
+8.  [Example using `react-redux-provide`](#example-using-react-redux-provide)
+9.  [Example using `compose`](#example-using-compose)
 
 
 ## Installation
@@ -65,6 +71,39 @@ You can:
 If this is new to you, see Wikipedia's [State machine replication](https://en.wikipedia.org/wiki/State_machine_replication) page for more about it!
 
 
+## Exports
+
+### Default export
+
+- `replicate` - Function which creates and returns the store enhancer based on the `replication` passed to it.  See the [Usage](#usage) section below.
+
+### Utilities
+
+- `storeKeysEqual` - Accepts 2 store keys as arguments and returns true if they match.
+
+### Action types
+
+- `GET_INITIAL_STATE` - Dispatched immediately before calling a replicator's `getInitialState` method.
+
+- `GOT_INITIAL_STATE` - Dispatched after a replicator calls `setState` within its `getInitialState` method.
+
+- `INITIAL_STATE_ERROR` - Dispatched when a replicator calls `setError` within its `getInitialState` method.
+
+- `REPLICATE_INITIAL_STATE` - If using `replication.clientState` or if a replicator passes `undefined` to `setState` within its `getInitialState` method and the store's default initial state should be replicated (via either `replication.create` or `replication.clientState`), this will be dispatched prior to replicating the state (via the replicator's `onStateChange` method).
+
+- `REPLICATED_INITIAL_STATE` - Applicable only in conjunction with `REPLICATE_INITIAL_STATE`.  Dispatched when a replicator calls `setStatus` within its `onStateChange` method.
+
+- `REPLICATE_STATE` - Dispatched immediately before calling a replicator's `onStateChange` method.
+
+- `REPLICATED_STATE` - Dispatched when a replicator calls `setStatus` within its `onStateChange` method.
+
+- `STATE_CHANGE_ERROR` - Dispatched when a replicator calls `setError` within its `onStateChange` method.
+
+- `SET_STATE` - Used internally when setting the state via `store.setState`, but you can dispatch this action along with `nextState` if for some reason you need to manually override the store's current state.
+
+- `FULLY_INITIALIZED` - Dispatched after replication as fully initialized.
+
+
 ## Usage
 
 Call the `replicate` function (default export) with the following options (as keys within an object) to create a store enhancer.
@@ -87,13 +126,13 @@ If either `false` or omitted, it will replicate the entire state object when cal
 
 ### queryable
 
-Optional boolean value or array of strings used for specifying whether or not the `key` (or `reducerKeys` if used) should be queryable by value.  Defaults to `false`.
+Optional boolean value or object used for specifying whether or not the `key` (or `reducerKeys` if used) should be queryable by value.  Defaults to `false`.
 
 If `true` and not using `reducerKeys`, then the `key` will be queryable by value (current state).
 
 If `true` and using `reducerKeys`, then each `reducerKey` will be queryable by value (current state).
 
-An array specifies which `reducerKeys` are queryable by value (current state).
+An object specifies which `reducerKeys` are queryable by value (current state) where the keys within the object correspond to each `reducerKey` and the values should be truthy.
 
 If `false`, values (current states) will not be queryable.
 
@@ -101,13 +140,13 @@ If `false`, values (current states) will not be queryable.
 
 Set this to `true` to ensure initial states are replicated.
 
-### replicator
-
-Either a single replicator or an array of replicators.  See the [Replicators](#replicators) section below.
-
 ### clientState
 
 Optional object used when determining which `reducerKeys` should be initialized on the client.  This object should be the initial state provided to the client by the server.  If no `clientState`, the client will be able to fully override the initial state with their own replicated values.
+
+### replicator
+
+Either a single replicator or an array of replicators.  See the [Replicators](#replicators) section below.
 
 
 ## Replicators
@@ -127,15 +166,22 @@ Replicators can:
 
 A replicator is a plain object of the following shape.
 
-### getInitialState ({ Object store, Optional String reducerKey, Function setState })
+### getInitialState
 
-Optional function to set the store's initial state, synchronously or asynchronously.
+Optional function to set the store's initial state, synchronously or asynchronously.  The following options are passed to it within an object:
 
-If using `reducerKeys`, this function is called once per initializable `reducerKey`.
+```
+Object store,
+String reducerKey,
+Function setState,
+Function setError
+```
+
+If using `reducerKeys`, this function is called once per initializable `reducerKey` (passing each `reducerKey` per call).
 
 If not using `reducerKeys`, this function is called only once.
 
-The `setState` function must be called for the store to finish initializing, regardless of whether or not the state exists within the data source.
+Either the `setState` or the `setError` function must be called for the store to finish initializing, regardless of whether or not the state exists within the data source.
 
 Example (from [`redux-replicate-localforage`](https://github.com/loggur/redux-replicate-localforage)):
 
@@ -144,18 +190,21 @@ const getItemKey = (key, reducerKey) => reducerKey
   ? `${key}/${reducerKey}`
   : key;
 
-const getInitialState = ({ store, reducerKey, setState }) => localforage
-  .getItem(getItemKey(store.key, reducerKey))
-  .then(state => setState(parse(state)))
-  .catch(error => {
-    warn(error);
-    setState();
-  });
+const getInitialState = ({ store, reducerKey, setState, setError }) => {
+  localforage
+    .getItem(getItemKey(store.key, reducerKey))
+    .then(state => setState(parse(state)))
+    .catch(setError);
+};
 ```
 
-### onReady ({ Object store })
+### onReady
 
-Optional function called after initialization.
+Optional function called after initialization.  The following options are passed to it within an object:
+
+```
+Object store
+```
 
 Example:
 
@@ -169,34 +218,60 @@ const onReady = ({ store }) => socket.on('action', ({ key, action }) => {
 });
 ```
 
-### onStateChange ({ Object store, Optional String reducerKey, Mixed state, Mixed nextState, Object action })
+### onStateChange
 
-Optional function to replicate the state and/or the action upon state changes.  This is called only after initialization.
+Optional function to replicate the state and/or the action upon state changes.  The following options are passed to it within an object:
 
-If using `reducerKeys`, this function is called once per `reducerKey`.
+```
+Object store,
+String reducerKey,
+Mixed state,
+Mixed nextState,
+Mixed create,
+Mixed clientState,
+Boolean queryable,
+Object action,
+Function setStatus,
+Function setError
+```
+
+If using `reducerKeys`, this function is called once per `reducerKey` with `state`, `nextState`, and `queryable` representing each particular `reducerKey`.
 
 If not using `reducerKeys`, this function is called only once.
 
 Example (from [`redux-replicate-localforage`](https://github.com/loggur/redux-replicate-localforage)):
 
 ```js
-const onStateChange = ({ store, reducerKey, nextState }) => {
+const onStateChange = ({
+  store,
+  reducerKey,
+  nextState,
+  queryable,
+  setError
+}) => {
   localforage
     .setItem(getItemKey(store.key, reducerKey), stringify(nextState))
-    .catch(warn);
+    .catch(setError);
 
-  if (store.replication.queryable) {
+  if (queryable) {
     // in the case of simple key-value stores like localforage where the
     // ability to query by value doesn't come with it, you can store a
     // custom map of values to keys to be used for querying...
     // in most cases you won't have to implement this functionality though :)
   }
-}
+};
 ```
 
-### postReduction ({ Object store, Mixed state, Mixed nextState, Object action })
+### postReduction
 
-Optional function to replicate the state and/or the action upon any reduction, regardless of whether or not the store's state has changed.  This is called only after initialization.  If you want to replicate actions, this is the place to do it.
+Optional function to replicate the state and/or the action upon any reduction, regardless of whether or not the store's state has changed.  This is called only after initialization.  If you want to replicate actions, this is the place to do it.  The following options are passed to it within an object:
+
+```
+Object store,
+Mixed state,
+Mixed nextState,
+Object action
+```
 
 This function is only called once per reduction.  A quick `state !== nextState` check here would let you know if any change has taken place, regardless of whether or not you're using `reducerKeys`.
 
@@ -210,24 +285,32 @@ function postReduction({ store, state, nextState, action }) {
 }
 ```
 
-### handleQuery ({ Mixed query, Function setResult })
+### handleQuery
 
-Optional function to handle some query.  The `query` argument can be specific to your implementation, but it's best to follow convention.  In the future, we may solidify a standard for this.
+Optional function to handle some query.  The `query` argument can be specific to your implementation, but it's best to follow convention.  In the future, we may solidify a standard for this.  The following options are passed to it within an object:
 
-If using `reducerKeys`, the `query` argument should typically be an object containing `reducerKey` to state (value) pairs along with any other options the replicator might use when handling the query.
+```
+Object store,
+Mixed query,
+Mixed options,
+Function setResult,
+Function setError
+```
+
+If using `reducerKeys`, the `query` argument should typically be an object containing `reducerKey` to state (value) pairs.
 
 If not using `reducerKeys`, the `query` argument should typically be the entire state.
 
-The `setResult` function accepts an `error` argument and a `result` argument.
+These are just general guidelines though, as it all really comes down to how your particular database or API is designed to handle queries.
 
 Example:
 
 ```js
-function handleQuery({ query, setResult }) {
+function handleQuery({ query, options, setResult, setError }) {
   database
-    .find(query)
-    .then(result => setResult(null, result))
-    .catch(error => setResult(error));
+    .find(query, options)
+    .then(setResult)
+    .catch(setError);
 }
 ```
 
@@ -240,11 +323,15 @@ The enhancer adds the following to the `store` object.
 
 The current `key`.
 
-### store.setKey (String key, Function readyCallback)
+### store.setKey
+
+(String key, Function readyCallback)
 
 Sets the current `key`.  The `readyCallback` is called after all of the replicators have fully initialized based on the new `key`.
 
-### store.setState (Mixed nextState)
+### store.setState
+
+(Mixed nextState)
 
 You typically shouldn't need to use this, as state changes should almost always occur as a result of `store.dispatch(action)`.  But it may be useful for keeping a store's state synchronized with some data source which doesn't rely on actions.  If using `reducerKeys`, the `nextState` is expected to be an object and is merged into the current state, similar to React's `setState`.  If not using `reducerKeys`, the `nextState` replaces the current state entirely.
 
@@ -252,7 +339,9 @@ You typically shouldn't need to use this, as state changes should almost always 
 
 An array containing each `replication` object (options) passed to the `replicate` function (this package's default export).  In most cases, this will contain only a single `replication` object, but it's mostly used internally for cases where multiple `replicate` enhancers are applied.
 
-### store.onReady (Function readyCallback)
+### store.onReady
+
+(Function readyCallback)
 
 You can use this if you know your replicator(s) asynchronously initialize the store's state and would like to do something immediately after initialization.  The `readyCallback` will receive the `store` within an object.
 

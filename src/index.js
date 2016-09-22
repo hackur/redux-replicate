@@ -2,11 +2,16 @@ import getInitialState from './getInitialState';
 import performReplication from './performReplication';
 import storeKeysEqual from './storeKeysEqual';
 import {
-  INIT,
-  CREATE,
   GET_INITIAL_STATE,
   GOT_INITIAL_STATE,
-  SET_STATE
+  INITIAL_STATE_ERROR,
+  REPLICATE_INITIAL_STATE,
+  REPLICATED_INITIAL_STATE,
+  REPLICATE_STATE,
+  REPLICATED_STATE,
+  STATE_CHANGE_ERROR,
+  SET_STATE,
+  FULLY_INITIALIZED
 } from './actionTypes';
 
 /**
@@ -81,10 +86,16 @@ const replicate = replication => next => (reducer, initialState, enhancer) => {
 export default replicate;
 
 export {
+  replicate,
   storeKeysEqual,
-  INIT,
-  CREATE,
   GET_INITIAL_STATE,
   GOT_INITIAL_STATE,
-  SET_STATE
+  INITIAL_STATE_ERROR,
+  REPLICATE_INITIAL_STATE,
+  REPLICATED_INITIAL_STATE,
+  REPLICATE_STATE,
+  REPLICATED_STATE,
+  STATE_CHANGE_ERROR,
+  SET_STATE,
+  FULLY_INITIALIZED
 };

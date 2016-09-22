@@ -1,6 +1,6 @@
 import expect from 'expect';
 import { createStore, combineReducers, compose } from 'redux';
-import replicate from '../src/index';
+import replicate, { FULLY_INITIALIZED } from '../src/index';
 
 describe('redux-replicate', () => {
   const SET_WOW = 'SET_WOW';
@@ -181,8 +181,9 @@ describe('redux-replicate', () => {
       expect(typeof state).toBe('object');
       expect(state.wow).toBe(databaseState['test/wow']);
       expect(state.very).toBe(databaseState['test/very']);
-      expect(onStateChangeCalls).toBe(0);
-      expect(postReductionCalls).toBe(0);
+      expect(lastAction.type).toBe(FULLY_INITIALIZED);
+      expect(onStateChangeCalls).toBe(0);   // no state changed
+      expect(postReductionCalls).toBe(1);   // dispatched FULLY_INITIALIZED
 
       done();
     }, 1000);
@@ -216,12 +217,12 @@ describe('redux-replicate', () => {
       action = actions.setWow(wow);
       store.dispatch(action);
       expect(lastAction).toBe(action);
-      expect(postReductionCalls).toBe(1);
+      expect(postReductionCalls).toBe(2);
 
       action = actions.setVery(very);
       store.dispatch(action);
       expect(lastAction).toBe(action);
-      expect(postReductionCalls).toBe(2);
+      expect(postReductionCalls).toBe(3);
 
       done();
     });
@@ -264,8 +265,8 @@ describe('redux-replicate', () => {
         awesome: '!!!!!!!!!!!!!'
       });
 
-      // setWow, setVery, setWow, setVery, setAwesome, setState = 6
-      expect(postReductionCalls).toBe(6);
+      // setWow, setVery, setWow, setVery, setAwesome, setState = 7
+      expect(postReductionCalls).toBe(7);
 
       // changed wow, 1
       // changed very, 2

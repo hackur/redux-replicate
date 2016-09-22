@@ -1,10 +1,13 @@
 import extractReducerKeys from './extractReducerKeys';
 import storeKeysEqual from './storeKeysEqual';
 import {
-  INIT,
-  CREATE,
   GET_INITIAL_STATE,
-  GOT_INITIAL_STATE
+  GOT_INITIAL_STATE,
+  INITIAL_STATE_ERROR,
+  REPLICATE_INITIAL_STATE,
+  REPLICATED_INITIAL_STATE,
+  STATE_CHANGE_ERROR,
+  FULLY_INITIALIZED
 } from './actionTypes';
 
 const getInitialState = (store, replication) => {
@@ -39,6 +42,7 @@ const getInitialState = (store, replication) => {
         // these are only used during initialization
         delete replication.create;
         delete replication.clientState;
+        store.dispatch({ type: FULLY_INITIALIZED });
       }
     }
   };
@@ -50,7 +54,6 @@ const getInitialState = (store, replication) => {
 
   const { key } = store;
   const currentState = store.getState();
-  const action = { type: replication.create ? CREATE : INIT };
 
   const shouldReplicate = reducerKey => replication.create || (
     replication.clientState && (
@@ -59,7 +62,19 @@ const getInitialState = (store, replication) => {
   );
 
   const initState = ({ getInitialState, onStateChange }) => reducerKey => {
-    store.dispatch({ type: GET_INITIAL_STATE, reducerKey });
+    const initProps = {
+      reducerKey,
+      nextState: reducerKey ? currentState[reducerKey] : currentState,
+      queryable: typeof replication.queryable === 'object'
+        ? replication.queryable[reducerKey]
+        : replication.queryable,
+      create: replication.create,
+      clientState: reducerKey
+        ? replication.clientState && replication.clientState[reducerKey]
+        : replication.clientState
+    };
+
+    store.dispatch({ type: GET_INITIAL_STATE, ...initProps });
     waitCount++;
 
     getInitialState({
@@ -68,34 +83,20 @@ const getInitialState = (store, replication) => {
       setState: state => {
         if (typeof state === 'undefined') {
           if (onStateChange && shouldReplicate(reducerKey)) {
-            const nextState = reducerKey
-              ? currentState[reducerKey]
-              : currentState;
-            const queryable = typeof replication.queryable === 'object'
-              ? replication.queryable[reducerKey]
-              : replication.queryable;
-            const create = replication.create;
-            const clientState = reducerKey
-              ? replication.clientState && replication.clientState[reducerKey]
-              : replication.clientState;
+            const action = { type: REPLICATE_INITIAL_STATE, ...initProps };
 
-            /*store.dispatch({
-              type: REPLICATE_INITIAL_STATE,
-              reducerKey,
-              nextState,
-              queryable,
-              create,
-              clientState
-            });*/
+            store.dispatch(action);
 
             onStateChange({
+              ...initProps,
               store,
-              reducerKey,
-              nextState,
-              queryable,
-              create,
-              clientState,
-              action
+              action,
+              setStatus: status => store.dispatch({
+                type: REPLICATED_INITIAL_STATE, ...initProps, status
+              }),
+              setError: error => store.dispatch({
+                type: STATE_CHANGE_ERROR, ...initProps, error
+              })
             });
           }
         } else if (storeKeysEqual(key, store.key)) {
@@ -107,7 +108,11 @@ const getInitialState = (store, replication) => {
           setInitialState = true;
         }
 
-        store.dispatch({ type: GOT_INITIAL_STATE, reducerKey, state });
+        store.dispatch({ type: GOT_INITIAL_STATE, ...initProps, state });
+        clear();
+      },
+      setError: error => {
+        store.dispatch({ type: INITIAL_STATE_ERROR, ...initProps, error });
         clear();
       }
     });
@@ -124,35 +129,35 @@ const getInitialState = (store, replication) => {
         if (replicator.onStateChange) {
           for (let reducerKey of setReducerKeys) {
             if (shouldReplicate(reducerKey)) {
-              let nextState = reducerKey
-                ? currentState[reducerKey]
-                : currentState;
-              let queryable = typeof replication.queryable === 'object'
-                ? replication.queryable[reducerKey]
-                : replication.queryable;
-              let create = replication.create;
-              let clientState = reducerKey
-                ? replication.clientState
-                  && replication.clientState[reducerKey]
-                : replication.clientState;
-
-              /*store.dispatch({
-                type: REPLICATE_INITIAL_STATE,
+              let setProps = {
                 reducerKey,
-                nextState,
-                queryable,
-                create,
-                clientState
-              });*/
+                nextState: reducerKey
+                  ? currentState[reducerKey]
+                  : currentState,
+                queryable: typeof replication.queryable === 'object'
+                  ? replication.queryable[reducerKey]
+                  : replication.queryable,
+                create: replication.create,
+                clientState: reducerKey
+                  ? replication.clientState
+                    && replication.clientState[reducerKey]
+                  : replication.clientState
+              };
+
+              const action = { type: REPLICATE_INITIAL_STATE, ...setProps };
+
+              store.dispatch(action);
 
               replicator.onStateChange({
+                ...setProps,
                 store,
-                reducerKey,
-                nextState,
-                queryable,
-                create,
-                clientState,
-                action
+                action,
+                setStatus: status => store.dispatch({
+                  type: REPLICATED_INITIAL_STATE, ...setProps, status
+                }),
+                setError: error => store.dispatch({
+                  type: STATE_CHANGE_ERROR, ...setProps, error
+                })
               });
             }
           }
