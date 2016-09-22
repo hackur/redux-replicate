@@ -84,22 +84,22 @@ describe('redux-replicate', () => {
   }
 
   const replicator = {
-    getInitialState({ key, reducerKey }, setState) {
-      const itemKey = getItemKey(key, reducerKey);
+    getInitialState({ store, reducerKey, setState }) {
+      const itemKey = getItemKey(store.key, reducerKey);
 
       setTimeout(() => {
         setState(databaseState[itemKey]);
       }, 1000);
     },
 
-    onStateChange({ key, reducerKey }, state, nextState, action, store) {
-      const itemKey = getItemKey(key, reducerKey);
+    onStateChange({ store, reducerKey, nextState }) {
+      const itemKey = getItemKey(store.key, reducerKey);
 
       databaseState[itemKey] = nextState;
       onStateChangeCalls++;
     },
 
-    postReduction({ key, reducerKey }, state, nextState, action, store) {
+    postReduction({ action }) {
       lastAction = action;
       postReductionCalls++;
     }
