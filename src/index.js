@@ -24,6 +24,8 @@ import {
 const replicate = replication => next => (reducer, initialState, enhancer) => {
   let store = null;
 
+  replication = { ...replication };
+
   const replicatedReducer = (state, action) => {
     let nextState = state;
 
