@@ -35,8 +35,12 @@ export default function extractReducerKeys(replication, state) {
           setReducerKeys.push(reducerKey);
         }
       }
+
+      reducerKeys = Object.keys(reducerKeys);
     }
   }
+
+  replication.reducerKeys = reducerKeys;
 
   return { getReducerKeys, setReducerKeys };
 }
