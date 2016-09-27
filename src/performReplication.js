@@ -35,6 +35,12 @@ const performReplication = (store, replication, state, nextState, action) => {
               ...setProps,
               store,
               action,
+              setState: state => setTimeout(() => {
+                store.setState(state);
+                store.dispatch({
+                  type: REPLICATED_STATE, ...setProps, state
+                });
+              }),
               setStatus: status => setTimeout(() => store.dispatch({
                 type: REPLICATED_STATE, ...setProps, status
               })),
@@ -61,6 +67,12 @@ const performReplication = (store, replication, state, nextState, action) => {
           ...setProps,
           store,
           action,
+          setState: state => setTimeout(() => {
+            store.setState(state);
+            store.dispatch({
+              type: REPLICATED_STATE, ...setProps, state
+            });
+          }),
           setStatus: status => setTimeout(() => store.dispatch({
             type: REPLICATED_STATE, ...setProps, status
           })),

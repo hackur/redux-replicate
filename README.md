@@ -91,11 +91,11 @@ If this is new to you, see Wikipedia's [State machine replication](https://en.wi
 
 - `REPLICATE_INITIAL_STATE` - If using `replication.clientState` or if a replicator passes `undefined` to `setState` within its `getInitialState` method and the store's default initial state should be replicated (via either `replication.create` or `replication.clientState`), this will be dispatched prior to replicating the state (via the replicator's `onStateChange` method).
 
-- `REPLICATED_INITIAL_STATE` - Applicable only in conjunction with `REPLICATE_INITIAL_STATE`.  Dispatched when a replicator calls `setStatus` within its `onStateChange` method.
+- `REPLICATED_INITIAL_STATE` - Applicable only in conjunction with `REPLICATE_INITIAL_STATE`.  Dispatched when a replicator calls `setState` or `setStatus` within its `onStateChange` method.
 
 - `REPLICATE_STATE` - Dispatched immediately before calling a replicator's `onStateChange` method.
 
-- `REPLICATED_STATE` - Dispatched when a replicator calls `setStatus` within its `onStateChange` method.
+- `REPLICATED_STATE` - Dispatched when a replicator calls `setState` or `setStatus` within its `onStateChange` method.
 
 - `STATE_CHANGE_ERROR` - Dispatched when a replicator calls `setError` within its `onStateChange` method.
 
@@ -227,10 +227,11 @@ Object store,
 String reducerKey,
 Mixed state,
 Mixed nextState,
-Mixed create,
-Mixed clientState,
 Boolean queryable,
 Object action,
+Mixed clientState,
+Mixed create,
+Function setState,
 Function setStatus,
 Function setError
 ```
@@ -238,6 +239,8 @@ Function setError
 If using `reducerKeys`, this function is called once per `reducerKey` with `state`, `nextState`, and `queryable` representing each particular `reducerKey`.
 
 If not using `reducerKeys`, this function is called only once.
+
+You should always call either `create` (if it's a function), `setState`, `setStatus`, or `setError` when the replication has completed.
 
 Example (from [`redux-replicate-localforage`](https://github.com/loggur/redux-replicate-localforage)):
 
@@ -247,10 +250,12 @@ const onStateChange = ({
   reducerKey,
   nextState,
   queryable,
+  setStatus,
   setError
 }) => {
   localforage
     .setItem(getItemKey(store.key, reducerKey), stringify(nextState))
+    .then(() => setStatus())
     .catch(setError);
 
   if (queryable) {

@@ -86,17 +86,31 @@ const getInitialState = (store, replication) => {
             const action = { type: REPLICATE_INITIAL_STATE, ...initProps };
 
             store.dispatch(action);
+            waitCount++;
 
             onStateChange({
               ...initProps,
               store,
               action,
-              setStatus: status => store.dispatch({
-                type: REPLICATED_INITIAL_STATE, ...initProps, status
-              }),
-              setError: error => store.dispatch({
-                type: STATE_CHANGE_ERROR, ...initProps, error
-              })
+              setState: state => {
+                store.setState(state);
+                store.dispatch({
+                  type: REPLICATED_INITIAL_STATE, ...initProps, state
+                });
+                clear();
+              },
+              setStatus: status => {
+                store.dispatch({
+                  type: REPLICATED_INITIAL_STATE, ...initProps, status
+                });
+                clear();
+              },
+              setError: error => {
+                store.dispatch({
+                  type: STATE_CHANGE_ERROR, ...initProps, error
+                });
+                clear();
+              }
             });
           }
         } else if (storeKeysEqual(key, store.key)) {
@@ -147,17 +161,31 @@ const getInitialState = (store, replication) => {
               const action = { type: REPLICATE_INITIAL_STATE, ...setProps };
 
               store.dispatch(action);
+              waitCount++;
 
               replicator.onStateChange({
                 ...setProps,
                 store,
                 action,
-                setStatus: status => store.dispatch({
-                  type: REPLICATED_INITIAL_STATE, ...setProps, status
-                }),
-                setError: error => store.dispatch({
-                  type: STATE_CHANGE_ERROR, ...setProps, error
-                })
+                setState: state => {
+                  store.setState(state);
+                  store.dispatch({
+                    type: REPLICATED_INITIAL_STATE, ...setProps, state
+                  });
+                  clear();
+                },
+                setStatus: status => {
+                  store.dispatch({
+                    type: REPLICATED_INITIAL_STATE, ...setProps, status
+                  });
+                  clear();
+                },
+                setError: error => {
+                  store.dispatch({
+                    type: STATE_CHANGE_ERROR, ...setProps, error
+                  });
+                  clear();
+                }
               });
             }
           }
