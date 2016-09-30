@@ -1,10 +1,22 @@
-import {
+import * as actionTypes from './actionTypes';
+
+const {
   REPLICATE_STATE,
   REPLICATED_STATE,
   STATE_CHANGE_ERROR
-} from './actionTypes';
+} = actionTypes;
+
+const actionTypeValueMap = {};
+for (let key in actionTypes) {
+  actionTypeValueMap[actionTypes[key]] = true;
+}
 
 const performReplication = (store, replication, state, nextState, action) => {
+  if (replication.creatorStore && actionTypeValueMap[action.type]) {
+    // TODO: we need a better way to create + replicate
+    replication.creatorStore.dispatch(action);
+  }
+
   if (!store || !store.key || !store.initializedReplication) {
     return;
   }

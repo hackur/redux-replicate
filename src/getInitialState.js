@@ -42,6 +42,7 @@ const getInitialState = (store, replication) => {
         // these are only used during initialization
         delete replication.create;
         delete replication.clientState;
+        delete replication.creatorStore;
         store.dispatch({ type: FULLY_INITIALIZED });
       }
     }
