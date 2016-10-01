@@ -41,7 +41,11 @@ const replicate = replication => next => (reducer, initialState, enhancer) => {
     }
 
     nextState = reducer(nextState, action);
-    performReplication(store, replication, state, nextState, action);
+
+    if (!action._skipReplication) {
+      performReplication(store, replication, state, nextState, action);
+    }
+
     return nextState;
   };
 
@@ -76,8 +80,8 @@ const replicate = replication => next => (reducer, initialState, enhancer) => {
   }
 
   if (!store.setState) {
-    store.setState = nextState => {
-      store.dispatch({ type: SET_STATE, nextState });
+    store.setState = (nextState, _skipReplication) => {
+      store.dispatch({ type: SET_STATE, nextState, _skipReplication });
     };
   }
 

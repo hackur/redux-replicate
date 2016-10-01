@@ -30,7 +30,7 @@ const getInitialState = (store, replication) => {
   const clear = () => {
     if (--waitCount === 0) {
       if (setInitialState) {
-        store.setState(actualInitialState);
+        store.setState(actualInitialState, true);
       }
 
       if (--store.initializingReplication === 0) {
@@ -94,7 +94,7 @@ const getInitialState = (store, replication) => {
               store,
               action,
               setState: state => {
-                store.setState(state);
+                store.setState(state, true);
                 store.dispatch({
                   type: REPLICATED_INITIAL_STATE, ...initProps, state
                 });
@@ -169,7 +169,7 @@ const getInitialState = (store, replication) => {
                 store,
                 action,
                 setState: state => {
-                  store.setState(state);
+                  store.setState(state, true);
                   store.dispatch({
                     type: REPLICATED_INITIAL_STATE, ...setProps, state
                   });
